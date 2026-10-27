@@ -1,0 +1,182 @@
+:root {
+  --container-max: 1350px;
+  --gutter: 0.2em;
+}
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.container {
+  /* background-color: orangered; */
+  width: 90%;
+  max-width: calc(var(--container-max) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  color: #333;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+h1 {
+  font-size: 1.7rem;
+}
+
+.header-inner p {
+  font-size: 1.14rem;
+}
+
+/* Header */
+.header {
+  height: 300px;
+  padding-block: 2.5em;
+  color: #fff;
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.5)),
+    url("https://images.unsplash.com/photo-1628432136678-43ff9be34064?q=80&w=663&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D");
+  background-size: cover;
+  background-position: 10% 25%;
+  background-repeat: no-repeat;
+
+  display: flex;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Main */
+main {
+  position: relative;
+}
+
+.movie-form {
+  position: absolute;
+  width: 100%;
+  top: 280px;
+}
+
+/* Search Container */
+.movie-form-container-inner {
+  border: 1px solid #d2d2d2;
+  border-radius: 5px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  padding-left: 0.3125em;
+}
+
+.icon {
+  background-color: #fff;
+  /* z-index: 3; */
+  color: inherit;
+  /* width: 40px; */
+}
+
+input {
+  padding: 1em 0.625em;
+  outline: none;
+  border: none;
+  flex: 1;
+  border-right: 1px solid #ddd;
+}
+
+button {
+  padding: 1em 0.625em;
+  border: none;
+  background-color: #d2d2d2;
+  /* width: 100px; */
+  display: flex;
+  justify-content: center;
+  gap: 1em;
+}
+
+section {
+  padding-block: 2.5em;
+}
+
+.search-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5em;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: inherit;
+}
+
+.search-container-inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.search-container .icon {
+  font-size: 6rem;
+}
+
+.search-results {
+  width: 100%;
+}
+
+.search-movie {
+  /* width: 100%; */
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: 0.5em;
+  border-bottom: 3px solid #ddd;
+  padding-bottom: 1.5em;
+}
+
+.movie-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+}
+
+.movie-content-heading {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+}
+
+.movie-content-details {
+  display: flex;
+  gap: 1.5em;
+}
+
+.title {
+  font-weight: bold;
+}
+
+.add-btn {
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.fa-star {
+  color: yellow;
+  margin-right: 0.3em;
+}
+
+img {
+  width: 100%;
+}
+
+/* Search Movie */
