@@ -9,7 +9,6 @@ const movieInput = document.getElementById("movie-input");
 const searchMovie = async function (url) {
   const response = await fetch(url);
   const movie = await response.json();
-  //   console.log(movie);
   return movie;
 };
 
@@ -55,8 +54,6 @@ movieForm.addEventListener("submit", async function (e) {
   const movie = await searchMovie(
     `https://www.omdbapi.com/?apikey=bea04c0d&t=${movieInput.value}`,
   );
-
-  console.log(movie);
 
   /* Render Movie to DOM */
   searchContainerResults.innerHTML = renderMovie(movie);
