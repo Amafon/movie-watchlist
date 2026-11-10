@@ -25,7 +25,7 @@ const fetchMoviesId = async function (input) {
 
   try {
     const res = await fetch(
-      `http://www.omdbapi.com/?apikey=bea04c0d&s=${inputSearch}`,
+      `https://www.omdbapi.com/?apikey=bea04c0d&s=${inputSearch}`,
     );
 
     if (res.status === 404) {
@@ -79,7 +79,7 @@ const fetchMovies = async function (arr) {
   const res = (
     await Promise.allSettled(
       arr.map((id) => {
-        return fetch(`http://www.omdbapi.com/?apikey=bea04c0d&i=${id}`);
+        return fetch(`https://www.omdbapi.com/?apikey=bea04c0d&i=${id}`);
       }),
     )
   ).filter((res) => res.status === "fulfilled");
