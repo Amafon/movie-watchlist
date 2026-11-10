@@ -1,168 +1,192 @@
 const searchContainerResults = document.getElementById(
   "search-container-results",
 );
+const searchContainerInner = document.getElementById("search-container-inner");
+
 const searchBtn = document.getElementById("search-btn");
 const movieForm = document.getElementById("movie-form");
 const movieInput = document.getElementById("movie-input");
-let moviesArr = [];
 
-movieForm.addEventListener("submit", function (e) {
-  e.preventDefault();
+const checkImageUrl = async function (url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = url;
+  });
+};
 
-  fetch(`https://www.omdbapi.com/?apikey=bea04c0d&s=${movieInput.value}`)
-    .then((res) => res.json())
-    .then((data) => {
-      data.Search.forEach((mov) => {
-        // Récupérer l'imdbID du premier résultat
-        let searchResultID = mov.imdbID;
-        // Récupérer les informations de ce film
-        fetch(`https://www.omdbapi.com/?apikey=bea04c0d&i=${searchResultID}`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.Poster != "N/A") {
-              moviesArr.push({
-                poster: data.Poster,
-                title: data.Title,
-                imdbRating: data.imdbRating,
-                runtime: data.Runtime,
-                genre: data.Genre,
-                plot: data.Plot,
-                imdbID: data.imdbID,
-              });
-            }
-          });
-      });
-    });
-  console.log(moviesArr);
+// Fonction pour rechercher des films en fonction du titre
+const fetchMoviesId = async function (input) {
+  const inputSearch = input.trim();
+  searchContainerResults.innerHTML = `
+    <img class="loading" src="loading.gif" />
+  `;
 
-  const moviesArrHTML = moviesArr
+  try {
+    const res = await fetch(
+      `http://www.omdbapi.com/?apikey=bea04c0d&s=${inputSearch}`,
+    );
+
+    if (res.status === 404) {
+      throw new Error(`Something went wrong - Response Status: ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    if (data.Response === "False") {
+      throw new Error(
+        `Unable to find what you're looking for. Please try another search.`,
+      );
+    }
+
+    const moviesId = data.Search.map((movie) => movie.imdbID);
+
+    return moviesId;
+  } catch (err) {
+    if (err.message.includes("fetch") || err.name === "TypeError") {
+      searchContainerResults.innerHTML = `
+       <div class="search-container" id="search-container">
+          <div
+            class="container search-container-inner"
+            id="search-container-inner"
+          >
+            <p>Impossible de joindre le serveur  - Vérifier votre connexion internet</p>
+          </div>
+        </div>
+      `;
+    } else {
+      searchContainerResults.innerHTML = `
+        <div class="search-container" id="search-container">
+          <div
+            class="container search-container-inner"
+            id="search-container-inner"
+          >
+            <p>${err.message}</p>
+          </div>
+        </div>
+      `;
+    }
+
+    return null;
+  }
+};
+
+const fetchMovies = async function (arr) {
+  //
+  if (!arr) return;
+
+  const res = (
+    await Promise.allSettled(
+      arr.map((id) => {
+        return fetch(`http://www.omdbapi.com/?apikey=bea04c0d&i=${id}`);
+      }),
+    )
+  ).filter((res) => res.status === "fulfilled");
+
+  const data = (
+    await Promise.allSettled(res.map((res) => res.value.json()))
+  ).map((res) => res.value);
+
+  const movies = (
+    await Promise.all(
+      data.map(async (movie) => {
+        const isValid = await checkImageUrl(movie.Poster);
+        return isValid ? movie : null;
+      }),
+    )
+  ).filter((mov) => mov !== null);
+
+  return movies;
+};
+
+const createMovies = function (movies) {
+  //
+  if (!movies) return;
+  return movies
     .map((movie) => {
       return `
-      <div class="search-movie">
-        <div class="movie-img">
-          <img
-            src="${movie.poster}"
-            alt="Poster of ${movie.title}"
-          />
-        </div>
-        <div class="movie-content">
-          <div class="movie-content-heading">
-            <p class="title">${movie.title}</p>
-            <p class="rating">
-              <i></i
-              ><span class="rating-score"
-                ><i class="fa-solid fa-star"></i>${movie.imdbRating}</span
-              >
-            </p>
-          </div>
-          <div class="movie-content-details">
-            <p class="runtime">${movie.runtime}</p>
-            <p class="genre">${movie.genre}</p>
-          </div>
-          <p class="description">
-            ${movie.plot}
-          </p>
-          <button class="add-btn" id="add-btn" data-imdbID="${movie.imdbID}">
-            <i class="fa-solid fa-circle-plus"></i>Watchlist
-          </button>
-        </div>
-      </div>
-    `;
+            <div class="search-movie">
+              <div class="movie-img">
+                <img src="${movie.Poster}" alt="Poster of ${movie.title}">
+              </div>
+
+              <div class="movie-content">
+                <div class="movie-content-heading">
+                  <p class="title">${movie.Title}</p>
+                  <p class="rating">
+                    <i class="fa-solid fa-star"></i>
+                    ${movie.imdbRating}
+                  </p>
+                </div>
+
+                <div class="movie-content-details">
+                  <p>${movie.Runtime}</p>
+                  <p>${movie.Genre}</p>
+                </div>
+
+                <p class="description">${movie.Plot}</p>
+
+                <button class="add-btn" data-imdbID="${movie.imdbID}">
+                  <i class="fa-solid fa-circle-plus"></i>
+                  Watchlist
+                </button>
+              </div>
+            </div>
+          `;
     })
     .join("");
-  searchContainerResults.innerHTML = moviesArrHTML;
+};
+
+const renderMovies = function (movies) {
+  if (!movies) return;
+  searchContainerResults.innerHTML = createMovies(movies);
+};
+
+const saveImdbid = function (id) {
+  // Récupérer les données dans localStorage
+  const movies = JSON.parse(localStorage.getItem("movies"));
+
+  // Vérifier si l'array movies existe
+  if (movies) {
+    // S'il existe, vérifier si l'id fait partie de la liste
+    const movieId = movies.includes(id);
+
+    // S'il n'existe pas, l'ajouter
+    if (!movieId) movies.push(id);
+
+    // Sauvegarder le nouveau tableau movies
+    localStorage.setItem("movies", JSON.stringify(movies));
+  } else {
+    // S'il n'existe pas le créer
+    const movies = [];
+
+    // Enregistre l'id du film
+    movies.push(id);
+
+    // Sauvegarder le nouveau tableau movies
+    localStorage.setItem("movies", JSON.stringify(movies));
+  }
+};
+
+movieForm.addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  const ids = await fetchMoviesId(movieInput.value);
+
+  if (!ids) return;
+
+  const movies = await fetchMovies(ids);
+
+  renderMovies(movies);
 });
-// ${movie.Poster}
-// ${movie.Title}
-// ${movie.imdbRating}
-// ${movie.Runtime}
-// ${movie.Genre}
-// ${movie.Plot}
-// ${movie.imdbID}
 
-// const searchMovie = async function (url) {
-//   const response = await fetch(url);
-//   const movie = await response.json();
-//   return movie;
-// };
+searchContainerResults.addEventListener("click", function (e) {
+  const btn = e.target.closest(".add-btn");
 
-// const renderMovie = function (htmlData) {
-//   searchContainerResults.innerHTML = htmlData;
-// };
+  if (!btn) return;
 
-// const storeMovieData = function (movie) {
-//   // Check if Local Storage "movies" exist
-//   if (localStorage.getItem("movies")) {
-//     // Get Local Storage Movies Data
-//     const movies = JSON.parse(localStorage.getItem("movies"));
-//     // Check if the movie we are about to add already exist in the movies array
-//     const results = movies.filter((arr) => arr.imdbID === movie.imdbID);
-//     if (results.length === 0) movies.push(movie);
-//     // Update LocalStorage
-//     localStorage.setItem("movies", JSON.stringify(movies));
-//   } else {
-//     // Create movies array
-//     const movies = [];
-//     // Save movie to movies
-//     movies.push(movie);
-//     // Save the key value movies in local storage
-//     localStorage.setItem("movies", JSON.stringify(movies));
-//   }
-// };
+  const id = btn.dataset.imdbid;
 
-// movieForm.addEventListener("submit", async function (e) {
-//   e.preventDefault();
-
-//   /* Get Movie Data */
-//   foundMovies = await searchMovie(
-//     `https://www.omdbapi.com/?apikey=bea04c0d&s=${movieInput.value}`,
-//   );
-
-//   console.log(foundMovies);
-
-//   /* Render Movie to DOM */
-//   const foundMoviesHTML = foundMovies.Search.map((movie) => {
-//     return `
-//       <div class="search-movie">
-//         <div class="movie-img">
-//           <img
-//             src="${movie.Poster}"
-//             alt="Poster of ${movie.Title}"
-//           />
-//         </div>
-//         <div class="movie-content">
-//           <div class="movie-content-heading">
-//             <p class="title">${movie.Title}</p>
-//             <p class="rating">
-//               <i></i
-//               ><span class="rating-score"
-//                 ><i class="fa-solid fa-star"></i>${movie.imdbRating}</span
-//               >
-//             </p>
-//           </div>
-//           <div class="movie-content-details">
-//             <p class="runtime">${movie.Runtime}</p>
-//             <p class="genre">${movie.Genre}</p>
-//           </div>
-//           <p class="description">
-//             ${movie.Plot}
-//           </p>
-//           <button class="add-btn" id="add-btn" data-imdbID="${movie.imdbID}">
-//             <i class="fa-solid fa-circle-plus"></i>Watchlist
-//           </button>
-//         </div>
-//       </div>
-//     `;
-//   }).join("");
-
-//   renderMovie(foundMoviesHTML);
-// });
-
-// searchContainerResults.addEventListener("click", function (e) {
-//   e.preventDefault();
-//   const btn = e.target.closest(".add-btn");
-//   if (btn) {
-//     /* Save Movie to localStorage*/
-//     storeMovieData(movie);
-//   }
-// });
+  saveImdbid(id);
+});
